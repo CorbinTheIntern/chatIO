@@ -4,26 +4,29 @@ var io = require("socket.io")(http);
 
 users = {};
 
+function checkIfNotTaken(user) {
+    for (var u in users) {
+        console.log("Checking " + u);
+        if (user.s == users[u].s) {
+            console.log("taken");
+            return true;
+        }
+    }
+};
+
 app.get("/", function (req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 
 io.on('connection', function (socket) {
-    console.log("A user has connected.");
-
     socket.on('login', function (user) {
-        if (users) {
-            for (var i = 0; i < users.length; i++) {
-                if (user.s == users[i].s) {
-                    socket.emit('loginError');
-                    return null;
-                }
-            }
-        }
+        var taken = checkIfNotTaken(user);
+        if(!taken) {
         socket.emit('loginSuccess', null);
         users[socket.id] = user;
         console.log(users);
         io.sockets.emit('join', user.n);
+        } else socket.emit('loginError');
     });
 
     socket.on("im", function (msg) {
@@ -32,6 +35,7 @@ io.on('connection', function (socket) {
 
     socket.on("disconnect", function () {
         delete users[socket.id];
+        console.log(users);
         io.sockets.emit('updateUL', users);
     });
 });

@@ -15,9 +15,13 @@
         }
         
         ul {
-            list-style-type: none;
+            list-style: none;
             margin: 0;
             padding: 0;
+        }
+        
+        li {
+            list-style-type: none;
         }
         
         #input {
@@ -44,7 +48,6 @@
         }
         
         #login {
-            background-color: #000000;
             padding: 5px;
         }
         
@@ -54,9 +57,9 @@
             width: 300px;
             margin-left: auto;
             margin-right: auto;
-            border-radius: 30px 30px 0px 0px;
-            -moz-border-radius: 30px 30px 0px 0px;
-            -webkit-border-radius: 30px 30px 0px 0px;
+            border-radius: 30px 30px 30px 30px;
+            -moz-border-radius: 30px 30px 30px 30px;
+            -webkit-border-radius: 30px 30px 30px 30px;
             border: 1px solid #000000;
             padding: 20px;
             -webkit-box-shadow: inset 15px 15px 33px -7px rgba(0, 0, 0, 0.83);
@@ -70,6 +73,8 @@
         
         #userList {
             width: calc(20% - 10px);
+            background-color: #CCC;
+            float: right;
         }
         
         #messages {
@@ -93,10 +98,11 @@
 
     <script>
         var socket = io(),
-            user = {};
+            user = {},
+            msg = {};
 
         socket.on("loginError", function() {
-            $("#error").html("That username is taken. Please pick a different one.")
+            $("#error").html("That username is taken. Please pick a different one.");
         });
 
         socket.on("loginSuccess", function() {
@@ -104,31 +110,32 @@
             $("#main").show();
         });
 
-        socket.on("join", function(users) {
-            $("#userList").html("<ul></ul>");
-
+        socket.on("im", function(msg) {
+            $("#messages").append($("<li>").text(msg.user.n + ": " + msg.msg));
+        });
+        
+        socket.on("updateUL", function(users) {
+            for (var u in users) {
+                $("#userList").append($("<li>").text(users[i].n));
+            }
         });
 
-        socket.on("im", function(msg) {
-            $("#messages").append($("<li>").text(msg));
-        })
-
-        $("#input").submit(function(e) {
+        function send() {
             socket.emit("im", {
                 user: user,
                 msg: $("#m").val()
             });
             $("#m").val("");
             return false;
-        });
+        };
 
-        $("#login").submit(function(e) {
+        function login() {
             user.n = $("#username").val();
-            user.s = user.n.toLowerCase();
-            user.s = user.s.replace(/[^a-zA-Z0-9]/g, '');
+            user.s = user.n.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+            console.log("user " + user.n + " logged in.");
             socket.emit("login", user);
             return false;
-        });
+        };
 
         $(function() {
             $("#main").hide();
@@ -141,8 +148,8 @@
 <body>
     <div id="menu">
         <h1>Enter a username</h1>
-        <form id="login" action="">
-            <input id="username" type="text">
+        <form id="login" action="" onsubmit="return login();">
+            <input id="username" autofocus autocomplete="off" type="text">
         </form>
         <h2 id="error"></h2>
     </div>
@@ -155,7 +162,7 @@
                 <ul></ul>
             </div>
         </div>
-        <form id="input" action="">
+        <form id="input" action="" onsubmit="return send();">
             <input id="m" autocomplete="off" type="text">
             <button>Send</button>
         </form>
